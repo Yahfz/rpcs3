@@ -1,6 +1,6 @@
 #pragma once
 
-#include "util/types.hpp"
+#include "util/endian.hpp"
 #include "Emu/RSX/gcm_enums.h"
 
 #include <span>
@@ -147,13 +147,24 @@ namespace rsx
 			u32 m_cache_size = 0;
 			alignas(64) std::byte m_cache[8][128];
 
+			std::pair<bool, u32> fetch_u32_slow(u32 addr);
+
 		public:
 			FIFO_control(rsx::thread* pctrl);
 			~FIFO_control() = default;
 
 			u32 translate_address(u32 addr) const;
 
-			std::pair<bool, u32> fetch_u32(u32 addr);
+			FORCE_INLINE std::pair<bool, u32> fetch_u32(u32 addr)
+			{
+				if (addr - m_cache_addr >= m_cache_size) [[unlikely]]
+				{
+					return fetch_u32_slow(addr);
+				}
+
+				const auto ret = read_from_ptr_unsafe<be_t<u32>>(+m_cache[0], addr - m_cache_addr);
+				return {true, ret};
+			}
 			void invalidate_cache() { m_cache_size = 0; }
 
 			u32 get_pos() const { return m_internal_get; }
