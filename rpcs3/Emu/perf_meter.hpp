@@ -9,6 +9,12 @@
 
 LOG_CHANNEL(perf_log, "PERF");
 
+struct perf_meter_report_only_t
+{
+};
+
+inline constexpr perf_meter_report_only_t perf_meter_report_only{};
+
 // TODO: constexpr with the help of bitcast
 template <auto Name>
 inline const auto perf_name = []
@@ -98,6 +104,18 @@ public:
 	FORCE_INLINE SAFE_BUFFERS() perf_meter(int) noexcept
 	{
 		std::fill(std::begin(m_timestamps), std::end(m_timestamps), 0);
+	}
+
+	FORCE_INLINE SAFE_BUFFERS() perf_meter(perf_meter_report_only_t) noexcept
+	{
+		if (g_cfg.core.perf_report)
+		{
+			restart();
+		}
+		else
+		{
+			std::fill(std::begin(m_timestamps), std::end(m_timestamps), 0);
+		}
 	}
 
 	FORCE_INLINE SAFE_BUFFERS(operator bool) () const noexcept

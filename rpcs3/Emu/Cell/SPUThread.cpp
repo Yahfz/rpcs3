@@ -2012,7 +2012,7 @@ void spu_thread::push_snr(u32 number, u32 value)
 
 void spu_thread::do_dma_transfer(spu_thread* _this, const spu_mfc_cmd& args, u8* ls)
 {
-	perf_meter<"DMA"_u32> perf_;
+	perf_meter<"DMA"_u32> perf_(perf_meter_report_only);
 
 	const bool is_get = (args.cmd & ~(MFC_BARRIER_MASK | MFC_FENCE_MASK | MFC_START_MASK)) == MFC_GET_CMD;
 
@@ -2802,7 +2802,7 @@ bool spu_thread::do_dma_check(const spu_mfc_cmd& args)
 
 bool spu_thread::do_list_transfer(spu_mfc_cmd& args)
 {
-	perf_meter<"MFC_LIST"_u64> perf0;
+	perf_meter<"MFC_LIST"_u64> perf0(perf_meter_report_only);
 
 	// Amount of elements to fetch in one go
 	constexpr u32 fetch_size = 6;
@@ -3358,7 +3358,7 @@ bool spu_thread::do_list_transfer(spu_mfc_cmd& args)
 
 bool spu_thread::do_putllc(const spu_mfc_cmd& args)
 {
-	perf_meter<"PUTLLC-"_u64> perf0;
+	perf_meter<"PUTLLC-"_u64> perf0(perf_meter_report_only);
 	perf_meter<"PUTLLC+"_u64> perf1 = perf0;
 
 	// Store conditionally
@@ -3532,7 +3532,7 @@ bool spu_thread::do_putllc(const spu_mfc_cmd& args)
 
 void do_cell_atomic_128_store(u32 addr, const void* to_write)
 {
-	perf_meter<"STORE128"_u64> perf0;
+	perf_meter<"STORE128"_u64> perf0(perf_meter_report_only);
 
 	const auto cpu = get_current_cpu_thread();
 	rsx::reservation_lock rsx_lock(addr, 128);
@@ -3656,7 +3656,7 @@ void do_cell_atomic_128_store(u32 addr, const void* to_write)
 			});
 
 			vm::reservation_acquire(addr) += 32;
-			result = utils::get_tsc() - perf0.get();
+			result = perf0 ? utils::get_tsc() - perf0.get() : 1;
 		}
 
 		if (result > 20000 && g_cfg.core.perf_report) [[unlikely]]
@@ -3670,7 +3670,7 @@ void do_cell_atomic_128_store(u32 addr, const void* to_write)
 
 void spu_thread::do_putlluc(const spu_mfc_cmd& args)
 {
-	perf_meter<"PUTLLUC"_u64> perf0;
+	perf_meter<"PUTLLUC"_u64> perf0(perf_meter_report_only);
 
 	const u32 addr = args.eal & -128;
 
