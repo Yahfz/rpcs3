@@ -4133,6 +4133,61 @@ spu_program spu_recompiler_base::analyse(const be_t<u32>* ls, u32 entry_point, s
 				}
 			}
 
+			const auto add_nan_hint_use = [&](u32 reg)
+			{
+				if (!block.reg_mod.test_unsafe(reg))
+				{
+					if (block.reg_nan_hint_use.test_unsafe(reg))
+					{
+						block.reg_nan_hint_reuse.set_unsafe(reg);
+					}
+
+					block.reg_nan_hint_use.set_unsafe(reg);
+				}
+			};
+
+			switch (type)
+			{
+			case spu_itype::FCGT:
+			{
+				if (g_cfg.core.spu_xfloat_accuracy != xfloat_accuracy::accurate)
+				{
+					add_nan_hint_use(op.ra);
+
+					if (op.rb != op.ra)
+					{
+						add_nan_hint_use(op.rb);
+					}
+				}
+
+				break;
+			}
+			case spu_itype::FM:
+			case spu_itype::FMA:
+			{
+				if (g_cfg.core.spu_xfloat_accuracy == xfloat_accuracy::approximate && op.ra != op.rb)
+				{
+					add_nan_hint_use(op.ra);
+					add_nan_hint_use(op.rb);
+				}
+
+				break;
+			}
+			case spu_itype::FS:
+			{
+				if (g_cfg.core.spu_xfloat_accuracy == xfloat_accuracy::approximate)
+				{
+					add_nan_hint_use(op.rb);
+				}
+
+				break;
+			}
+			default:
+			{
+				break;
+			}
+			}
+
 			if (type == spu_itype::WRCH && op.ra == MFC_Cmd)
 			{
 				// Expand MFC_Cmd reg use
@@ -6527,6 +6582,8 @@ spu_program spu_recompiler_base::analyse(const be_t<u32>* ls, u32 entry_point, s
 
 				std::array<u32, s_reg_max> reg_use{};
 				bit_set<s_reg_max> reg_maybe_float{};
+				bit_set<s_reg_max> reg_nan_hint_use{};
+				bit_set<s_reg_max> reg_nan_hint_reuse{};
 				bit_set<s_reg_max> reg_mod{};
 
 				for (auto it = m_bbs.find(reduced_loop->loop_pc); it != m_bbs.end() && it->first <= bpc; it++)
@@ -6536,6 +6593,16 @@ spu_program spu_recompiler_base::analyse(const be_t<u32>* ls, u32 entry_point, s
 						if (!reg_mod.test_unsafe(i))
 						{
 							reg_use[i] += it->second.reg_use[i];
+
+							if (it->second.reg_nan_hint_reuse.test_unsafe(i) || (reg_nan_hint_use.test_unsafe(i) && it->second.reg_nan_hint_use.test_unsafe(i)))
+							{
+								reg_nan_hint_reuse.set_unsafe(i);
+							}
+
+							if (it->second.reg_nan_hint_use.test_unsafe(i))
+							{
+								reg_nan_hint_use.set_unsafe(i);
+							}
 						}
 					}
 
@@ -6563,7 +6630,7 @@ spu_program spu_recompiler_base::analyse(const be_t<u32>* ls, u32 entry_point, s
 						{
 							reduced_loop->loop_args.set_unsafe(i);
 
-							if (reg_use[i] >= 3 && reg_maybe_float.test_unsafe(i))
+							if (reg_use[i] >= 3 && reg_maybe_float.test_unsafe(i) && reg_nan_hint_reuse.test_unsafe(i))
 							{
 								reduced_loop->gpr_not_nans.set_unsafe(i);
 							}
@@ -7258,6 +7325,8 @@ spu_program spu_recompiler_base::analyse(const be_t<u32>* ls, u32 entry_point, s
 
 					std::array<u32, s_reg_max> reg_use{};
 					bit_set<s_reg_max> reg_maybe_float{};
+					bit_set<s_reg_max> reg_nan_hint_use{};
+					bit_set<s_reg_max> reg_nan_hint_reuse{};
 					bit_set<s_reg_max> reg_mod{};
 
 					for (auto it = m_bbs.find(reduced_loop->loop_pc); it != m_bbs.end() && it->first <= bpc; it++)
@@ -7267,6 +7336,16 @@ spu_program spu_recompiler_base::analyse(const be_t<u32>* ls, u32 entry_point, s
 							if (!reg_mod.test_unsafe(i))
 							{
 								reg_use[i] += it->second.reg_use[i];
+
+								if (it->second.reg_nan_hint_reuse.test_unsafe(i) || (reg_nan_hint_use.test_unsafe(i) && it->second.reg_nan_hint_use.test_unsafe(i)))
+								{
+									reg_nan_hint_reuse.set_unsafe(i);
+								}
+
+								if (it->second.reg_nan_hint_use.test_unsafe(i))
+								{
+									reg_nan_hint_use.set_unsafe(i);
+								}
 							}
 						}
 
@@ -7294,7 +7373,7 @@ spu_program spu_recompiler_base::analyse(const be_t<u32>* ls, u32 entry_point, s
 							{
 								reduced_loop->loop_args.set_unsafe(i);
 
-								if (reg_use[i] >= 3 && reg_maybe_float.test_unsafe(i))
+								if (reg_use[i] >= 3 && reg_maybe_float.test_unsafe(i) && reg_nan_hint_reuse.test_unsafe(i))
 								{
 									reduced_loop->gpr_not_nans.set_unsafe(i);
 								}

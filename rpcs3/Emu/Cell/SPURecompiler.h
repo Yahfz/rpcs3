@@ -761,6 +761,12 @@ protected:
 		// Set if register is used in floating pont instruction
 		bit_set<s_reg_max> reg_maybe_float{};
 
+		// Set if register has a use which can consume the reduced-loop non-NaN hint
+		bit_set<s_reg_max> reg_nan_hint_use{};
+
+		// Set if register has at least two such uses
+		bit_set<s_reg_max> reg_nan_hint_reuse{};
+
 		// Set if register is used as shuffle mask
 		bit_set<s_reg_max> reg_maybe_shuffle_mask{};
 
