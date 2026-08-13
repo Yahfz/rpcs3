@@ -77,8 +77,15 @@ R"(
 #endif
 
 	// Commit
+#ifdef _ENABLE_COLOR_OUTPUT_REMAP
+	ocol0 = col0.bgra;
+	ocol1 = col1.bgra;
+	ocol2 = col2.bgra;
+	ocol3 = col3.bgra;
+#else
 	ocol0 = col0;
 	ocol1 = col1;
 	ocol2 = col2;
 	ocol3 = col3;
+#endif
 )"

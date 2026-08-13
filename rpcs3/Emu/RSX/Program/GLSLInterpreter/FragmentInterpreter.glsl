@@ -85,6 +85,7 @@ layout(location=0) in vec4 in_regs[16];
 
 #define CELL_GCM_SHADER_CONTROL_DEPTH_EXPORT 0xe
 #define CELL_GCM_SHADER_CONTROL_32_BITS_EXPORTS 0x40
+#define ROP_COLOR_OUTPUT_REMAP_BIT 4
 
 #define GET_BITS(bitfield, offset, count) bitfieldExtract(bitfield, offset, count)
 #define TEST_BIT(bitfield, offset) (GET_BITS(bitfield, offset, 1) > 0)
@@ -864,6 +865,14 @@ void main()
 		ocol2 = regs32[3];
 		ocol3 = regs32[4];
 #endif
+
+	if (TEST_BIT(rop_control, ROP_COLOR_OUTPUT_REMAP_BIT))
+	{
+		ocol0 = ocol0.bgra;
+		ocol1 = ocol1.bgra;
+		ocol2 = ocol2.bgra;
+		ocol3 = ocol3.bgra;
+	}
 
 #ifdef WITH_DEPTH_EXPORT
 	gl_FragDepth = regs32[1].z;

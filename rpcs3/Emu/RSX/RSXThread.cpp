@@ -3,6 +3,7 @@
 
 #include "Capture/rsx_capture.h"
 #include "Common/surface_store.h"
+#include "color_utils.h"
 #include "Core/RSXReservationLock.hpp"
 #include "Core/RSXEngLock.hpp"
 #include "Host/MM.h"
@@ -2168,6 +2169,11 @@ namespace rsx
 		current_fragment_program.texcoord_control_mask = m_ctx->register_state->texcoord_control_mask();
 		current_fragment_program.two_sided_lighting = m_ctx->register_state->two_side_light_en();
 		current_fragment_program.mrt_buffers_count = rsx::utility::get_mrt_buffers_count(m_ctx->register_state->surface_color_target());
+
+		if (requires_color_output_remap(m_ctx->register_state->surface_color()))
+		{
+			current_fragment_program.ctrl |= RSX_SHADER_CONTROL_REMAP_COLOR_OUTPUT;
+		}
 
 		if (m_ctx->register_state->current_draw_clause.classify_mode() == primitive_class::polygon)
 		{

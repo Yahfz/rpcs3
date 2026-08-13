@@ -4,6 +4,7 @@
 
 #include "Emu/RSX/RSXThread.h"
 #include "Emu/RSX/Common/BufferUtils.h"
+#include "Emu/RSX/color_utils.h"
 
 #define RSX(ctx) ctx->rsxthr
 #define REGS(ctx) (&rsx::method_registers)
@@ -249,10 +250,15 @@ namespace rsx
 			// Check if we need to also update fragment state
 			const auto current = REGS(ctx)->decode<NV4097_SET_SURFACE_FORMAT>(arg);
 			const auto previous = REGS(ctx)->decode<NV4097_SET_SURFACE_FORMAT>(REGS(ctx)->latch);
-
 			if (current.is_integer_color_format() != previous.is_integer_color_format()) // Different ROP emulation
 			{
 				RSX(ctx)->m_graphics_state |= rsx::pipeline_state::fragment_program_state_dirty;
+			}
+
+			if (rsx::requires_color_output_remap(current.color_fmt()) != rsx::requires_color_output_remap(previous.color_fmt()))
+			{
+				RSX(ctx)->m_graphics_state |= rsx::pipeline_state::fragment_program_state_dirty |
+				                              rsx::pipeline_state::fragment_state_dirty;
 			}
 
 			if (*current.antialias() != *previous.antialias()) // Antialias control has changed, update ROP parameters

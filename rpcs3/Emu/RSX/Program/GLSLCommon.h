@@ -17,6 +17,7 @@ namespace rsx
 		SRGB_FRAMEBUFFER_BIT         = 1,
 		ALPHA_TO_COVERAGE_ENABLE_BIT = 2,
 		POLYGON_STIPPLE_ENABLE_BIT   = 3,
+		COLOR_OUTPUT_REMAP_BIT       = 4,
 
 		// Auxilliary config
 		INT_FRAMEBUFFER_BIT          = 16,
@@ -44,6 +45,7 @@ namespace rsx
 		void enable_framebuffer_sRGB() { value |= (1u << ROP_control_bits::SRGB_FRAMEBUFFER_BIT); }
 		void enable_alpha_to_coverage() { value |= (1u << ROP_control_bits::ALPHA_TO_COVERAGE_ENABLE_BIT); }
 		void enable_polygon_stipple() { value |= (1u << ROP_control_bits::POLYGON_STIPPLE_ENABLE_BIT); }
+		void enable_color_output_remap() { value |= (1u << ROP_control_bits::COLOR_OUTPUT_REMAP_BIT); }
 
 		void enable_framebuffer_INT() { value |= (1u << ROP_control_bits::INT_FRAMEBUFFER_BIT); }
 		void enable_MSAA_writes() { value |= (1u << ROP_control_bits::MSAA_WRITE_ENABLE_BIT); }

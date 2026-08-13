@@ -174,6 +174,11 @@ namespace rsx
 		return result;
 	}
 
+	static inline bool requires_color_output_remap(surface_color_format format)
+	{
+		return format == surface_color_format::b8 || format == surface_color_format::g8b8;
+	}
+
 	// Convert color write mask for G8B8 to R8G8
 	static inline u32 get_g8b8_r8g8_clearmask(u32 mask)
 	{

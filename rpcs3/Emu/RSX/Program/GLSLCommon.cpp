@@ -233,6 +233,11 @@ namespace glsl
 				enabled_options.push_back("_ENABLE_ROP_OUTPUT_ROUNDING");
 			}
 
+			if (props.ROP_color_output_remap)
+			{
+				enabled_options.push_back("_ENABLE_COLOR_OUTPUT_REMAP");
+			}
+
 			if (props.ROP_alpha_test)
 			{
 				enabled_options.push_back("_ENABLE_ALPHA_TEST");
