@@ -2776,12 +2776,13 @@ namespace rsx
 			{
 				const auto surf = src_subres.surface;
 				const auto bpp = surf->get_bpp();
-				const bool typeless = (bpp != src_bpp || is_format_convert);
+				const u32 expected_format = helpers::get_sized_blit_format(src_is_argb8, src_subres.is_depth, false);
+				const bool typeless = (bpp != src_bpp || is_format_convert || surf->get_gcm_format() != expected_format);
 
 				if (!typeless) [[likely]]
 				{
 					// Use format as-is
-					typeless_info.src_gcm_format = helpers::get_sized_blit_format(src_is_argb8, src_subres.is_depth, false);
+					typeless_info.src_gcm_format = expected_format;
 				}
 				else
 				{
