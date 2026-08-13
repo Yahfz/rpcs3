@@ -2355,7 +2355,8 @@ namespace rsx
 				subsurface_count = 1;
 				tex_size = static_cast<u32>(get_texture_size(tex));
 				required_surface_height = tex_size / attributes.pitch;
-				attributes.slice_h = required_surface_height / attributes.depth;
+				// Depth slices precede the next mip level in memory.
+				attributes.slice_h = attributes.height;
 				break;
 			default:
 				fmt::throw_exception("Unsupported texture dimension %d", static_cast<int>(extended_dimension));
