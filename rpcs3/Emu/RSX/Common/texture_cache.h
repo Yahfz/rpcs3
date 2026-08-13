@@ -3020,6 +3020,11 @@ namespace rsx
 				const auto bpp = surf->get_bpp();
 				blit_engine_helpers::configure_typeless_format(typeless_info.src_is_typeless, typeless_info.src_scaling_hint, typeless_info.src_gcm_format, bpp, src_bpp, src_is_argb8, src_subres.is_depth, is_format_convert);
 
+				if (surf->get_gcm_format() != typeless_info.src_gcm_format)
+				{
+					typeless_info.src_is_typeless = true;
+				}
+
 				if (surf->template get_surface_width<rsx::surface_metrics::pixels>() != surf->width() ||
 					surf->template get_surface_height<rsx::surface_metrics::pixels>() != surf->height())
 				{
