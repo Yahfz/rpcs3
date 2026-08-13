@@ -4473,6 +4473,12 @@ game_boot_result Emulator::AddGameToYml(std::string path)
 	if (is_iso_file(path))
 	{
 		archive = std::make_unique<iso_archive>(path);
+
+		if (!archive->is_valid())
+		{
+			sys_log.error("Failed to load ISO.");
+			return game_boot_result::invalid_file_or_folder;
+		}
 	}
 
 	// Load PARAM.SFO
@@ -4650,10 +4656,10 @@ game_boot_result Emulator::RemoveGameFromYml(const std::string& title_id)
 	return game_boot_result::generic_error;
 }
 
-bool Emulator::IsPathInsideDir(std::string_view path, std::string_view dir) const
+bool Emulator::IsPathInsideDir(std::string_view path, std::string_view dir, bool check_if_exists) const
 {
-	const std::string dir_path = GetCallbacks().resolve_path(dir);
-	const std::string resolved_path = GetCallbacks().resolve_path(path);
+	const std::string dir_path = check_if_exists ? GetCallbacks().resolve_path(dir) : GetCallbacks().resolve_path_may_not_exist(dir);
+	const std::string resolved_path = check_if_exists ? GetCallbacks().resolve_path(path) : GetCallbacks().resolve_path_may_not_exist(path);
 
 	return !dir_path.empty() && !resolved_path.empty() && (resolved_path + '/').starts_with((dir_path.back() == '/') ? dir_path : (dir_path + '/'));
 }
@@ -4869,7 +4875,9 @@ utils::serial* Emulator::DeserialManager() const
 
 bool Emulator::IsVsh()
 {
-	return g_ps3_process_info.self_info.valid && (g_ps3_process_info.self_info.prog_id_hdr.program_authority_id >> 36 == 0x1070000); // Not only VSH but also most CoreOS LV2 SELFs need the special treatment
+	const auto process = &g_ps3_process_info;
+
+	return process->self_info.valid && (process->self_info.prog_id_hdr.program_authority_id == 0x10700005FF000001L); // VSH.self ID
 }
 
 bool Emulator::IsValidSfb(const std::string& path)
