@@ -357,7 +357,7 @@
                 <item>
                  <widget class="QLabel" name="label_custom_xfloat_presets">
                   <property name="text">
-                   <string>Start from:</string>
+                   <string>Preset:</string>
                   </property>
                  </widget>
                 </item>
