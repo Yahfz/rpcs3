@@ -1503,7 +1503,33 @@ QString emu_settings::GetLocalizedSetting(const QString& original, emu_settings_
 		case xfloat_accuracy::accurate: return tr("Accurate XFloat");
 		case xfloat_accuracy::approximate: return tr("Approximate XFloat");
 		case xfloat_accuracy::relaxed: return tr("Relaxed XFloat");
+		case xfloat_accuracy::custom: return tr("Custom XFloat");
 		case xfloat_accuracy::inaccurate: return tr("Inaccurate XFloat");
+		}
+		break;
+	case emu_settings_type::XFloatModeFCGT:
+	case emu_settings_type::XFloatModeFCMGT:
+	case emu_settings_type::XFloatModeFCEQ:
+	case emu_settings_type::XFloatModeFCMEQ:
+	case emu_settings_type::XFloatModeFA:
+	case emu_settings_type::XFloatModeFS:
+	case emu_settings_type::XFloatModeFM:
+	case emu_settings_type::XFloatModeFNMS:
+	case emu_settings_type::XFloatModeFMA:
+	case emu_settings_type::XFloatModeFMS:
+	case emu_settings_type::XFloatModeFESD:
+	case emu_settings_type::XFloatModeFRDS:
+	case emu_settings_type::XFloatModeCFLTS:
+	case emu_settings_type::XFloatModeCFLTU:
+	case emu_settings_type::XFloatModeCSFLT:
+	case emu_settings_type::XFloatModeCUFLT:
+	case emu_settings_type::XFloatModeFI:
+		switch (static_cast<xfloat_mode>(index))
+		{
+		case xfloat_mode::accurate: return tr("Accurate");
+		case xfloat_mode::approximate: return tr("Approximate");
+		case xfloat_mode::relaxed: return tr("Relaxed");
+		case xfloat_mode::inaccurate: return tr("Inaccurate");
 		}
 		break;
 	case emu_settings_type::VSync:

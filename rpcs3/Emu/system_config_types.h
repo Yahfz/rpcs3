@@ -369,6 +369,15 @@ enum class xfloat_accuracy
 	accurate,
 	approximate,
 	relaxed, // Approximate accuracy for only the "FCGT", "FNMS", "FREST" AND "FRSQEST" instructions
+	custom,
+	inaccurate
+};
+
+enum class xfloat_mode
+{
+	accurate,
+	approximate,
+	relaxed,
 	inaccurate
 };
 

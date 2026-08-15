@@ -160,9 +160,201 @@
                <item>
                 <widget class="QComboBox" name="xfloatAccuracy"/>
                </item>
-              </layout>
-             </widget>
-            </item>
+             </layout>
+            </widget>
+           </item>
+           <item>
+            <widget class="QGroupBox" name="gb_custom_xfloat">
+             <property name="title">
+              <string>XFloat Preset</string>
+             </property>
+             <layout class="QGridLayout" name="gb_custom_xfloat_layout">
+              <item row="0" column="0">
+               <widget class="QLabel" name="label_xfloat_fcgt">
+                <property name="text">
+                 <string>FCGT</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QComboBox" name="xfloatModeFCGT"/>
+              </item>
+              <item row="0" column="2">
+               <widget class="QLabel" name="label_xfloat_fcmgt">
+                <property name="text">
+                 <string>FCMGT</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="3">
+               <widget class="QComboBox" name="xfloatModeFCMGT"/>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="label_xfloat_fceq">
+                <property name="text">
+                 <string>FCEQ</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QComboBox" name="xfloatModeFCEQ"/>
+              </item>
+              <item row="1" column="2">
+               <widget class="QLabel" name="label_xfloat_fcmeq">
+                <property name="text">
+                 <string>FCMEQ</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="3">
+               <widget class="QComboBox" name="xfloatModeFCMEQ"/>
+              </item>
+              <item row="2" column="0">
+               <widget class="QLabel" name="label_xfloat_fa">
+                <property name="text">
+                 <string>FA</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="1">
+               <widget class="QComboBox" name="xfloatModeFA"/>
+              </item>
+              <item row="2" column="2">
+               <widget class="QLabel" name="label_xfloat_fs">
+                <property name="text">
+                 <string>FS</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="3">
+               <widget class="QComboBox" name="xfloatModeFS"/>
+              </item>
+              <item row="3" column="0">
+               <widget class="QLabel" name="label_xfloat_fm">
+                <property name="text">
+                 <string>FM</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="1">
+               <widget class="QComboBox" name="xfloatModeFM"/>
+              </item>
+              <item row="3" column="2">
+               <widget class="QLabel" name="label_xfloat_fnms">
+                <property name="text">
+                 <string>FNMS</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="3">
+               <widget class="QComboBox" name="xfloatModeFNMS"/>
+              </item>
+              <item row="4" column="0">
+               <widget class="QLabel" name="label_xfloat_fma">
+                <property name="text">
+                 <string>FMA</string>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="1">
+               <widget class="QComboBox" name="xfloatModeFMA"/>
+              </item>
+              <item row="4" column="2">
+               <widget class="QLabel" name="label_xfloat_fms">
+                <property name="text">
+                 <string>FMS</string>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="3">
+               <widget class="QComboBox" name="xfloatModeFMS"/>
+              </item>
+              <item row="5" column="0">
+               <widget class="QLabel" name="label_xfloat_fesd">
+                <property name="text">
+                 <string>FESD</string>
+                </property>
+               </widget>
+              </item>
+              <item row="5" column="1">
+               <widget class="QComboBox" name="xfloatModeFESD"/>
+              </item>
+              <item row="5" column="2">
+               <widget class="QLabel" name="label_xfloat_frds">
+                <property name="text">
+                 <string>FRDS</string>
+                </property>
+               </widget>
+              </item>
+              <item row="5" column="3">
+               <widget class="QComboBox" name="xfloatModeFRDS"/>
+              </item>
+              <item row="6" column="0">
+               <widget class="QLabel" name="label_xfloat_cflts">
+                <property name="text">
+                 <string>CFLTS</string>
+                </property>
+               </widget>
+              </item>
+              <item row="6" column="1">
+               <widget class="QComboBox" name="xfloatModeCFLTS"/>
+              </item>
+              <item row="6" column="2">
+               <widget class="QLabel" name="label_xfloat_cfltu">
+                <property name="text">
+                 <string>CFLTU</string>
+                </property>
+               </widget>
+              </item>
+              <item row="6" column="3">
+               <widget class="QComboBox" name="xfloatModeCFLTU"/>
+              </item>
+              <item row="7" column="0">
+               <widget class="QLabel" name="label_xfloat_csflt">
+                <property name="text">
+                 <string>CSFLT</string>
+                </property>
+               </widget>
+              </item>
+              <item row="7" column="1">
+               <widget class="QComboBox" name="xfloatModeCSFLT"/>
+              </item>
+              <item row="7" column="2">
+               <widget class="QLabel" name="label_xfloat_cuflt">
+                <property name="text">
+                 <string>CUFLT</string>
+                </property>
+               </widget>
+              </item>
+              <item row="7" column="3">
+               <widget class="QComboBox" name="xfloatModeCUFLT"/>
+              </item>
+              <item row="8" column="0">
+               <widget class="QLabel" name="label_xfloat_fi">
+                <property name="text">
+                 <string>FI</string>
+                </property>
+               </widget>
+              </item>
+              <item row="8" column="1">
+               <widget class="QComboBox" name="xfloatModeFI"/>
+              </item>
+              <item row="8" column="2" colspan="2">
+               <spacer name="horizontalSpacerCustomXFloat">
+                <property name="orientation">
+                 <enum>Qt::Orientation::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+             </layout>
+            </widget>
+           </item>
             <item>
              <widget class="QGroupBox" name="gb_spuBlockSize">
               <property name="sizePolicy">

@@ -11,6 +11,7 @@
 #include <QSpinBox>
 #include <QTimer>
 #include <QScreen>
+#include <QSignalBlocker>
 #include <QStyleFactory>
 
 #include "gui_settings.h"
@@ -63,6 +64,19 @@ static int find_item(const QComboBox* box, int value)
 	for (int i = 0; box && i < box->count(); i++)
 	{
 		if (get_data(box, i).second == value)
+		{
+			return i;
+		}
+	}
+
+	return -1;
+}
+
+static int find_item(const QComboBox* box, const QString& value)
+{
+	for (int i = 0; box && i < box->count(); i++)
+	{
+		if (get_data(box, i).first == value)
 		{
 			return i;
 		}
@@ -268,6 +282,76 @@ settings_dialog::settings_dialog(std::shared_ptr<gui_settings> gui_settings, std
 	SubscribeTooltip(ui->gb_xfloat_accuracy, tooltips.settings.xfloat);
 	remove_item(ui->xfloatAccuracy, static_cast<int>(xfloat_accuracy::inaccurate), static_cast<int>(g_cfg.core.spu_xfloat_accuracy.def));
 
+	const std::array xfloat_modes
+	{
+		std::pair{ui->xfloatModeFCGT, emu_settings_type::XFloatModeFCGT},
+		std::pair{ui->xfloatModeFCMGT, emu_settings_type::XFloatModeFCMGT},
+		std::pair{ui->xfloatModeFCEQ, emu_settings_type::XFloatModeFCEQ},
+		std::pair{ui->xfloatModeFCMEQ, emu_settings_type::XFloatModeFCMEQ},
+		std::pair{ui->xfloatModeFA, emu_settings_type::XFloatModeFA},
+		std::pair{ui->xfloatModeFS, emu_settings_type::XFloatModeFS},
+		std::pair{ui->xfloatModeFM, emu_settings_type::XFloatModeFM},
+		std::pair{ui->xfloatModeFNMS, emu_settings_type::XFloatModeFNMS},
+		std::pair{ui->xfloatModeFMA, emu_settings_type::XFloatModeFMA},
+		std::pair{ui->xfloatModeFMS, emu_settings_type::XFloatModeFMS},
+		std::pair{ui->xfloatModeFESD, emu_settings_type::XFloatModeFESD},
+		std::pair{ui->xfloatModeFRDS, emu_settings_type::XFloatModeFRDS},
+		std::pair{ui->xfloatModeCFLTS, emu_settings_type::XFloatModeCFLTS},
+		std::pair{ui->xfloatModeCFLTU, emu_settings_type::XFloatModeCFLTU},
+		std::pair{ui->xfloatModeCSFLT, emu_settings_type::XFloatModeCSFLT},
+		std::pair{ui->xfloatModeCUFLT, emu_settings_type::XFloatModeCUFLT},
+		std::pair{ui->xfloatModeFI, emu_settings_type::XFloatModeFI},
+	};
+
+	for (const auto& [box, type] : xfloat_modes)
+	{
+		m_emu_settings->EnhanceComboBox(box, type);
+	}
+
+	SubscribeTooltip(ui->gb_custom_xfloat, tooltips.settings.custom_xfloat);
+
+	const auto update_xfloat_modes = [this, xfloat_modes](int)
+	{
+		const auto accuracy = static_cast<xfloat_accuracy>(get_data(ui->xfloatAccuracy, ui->xfloatAccuracy->currentIndex()).second);
+		const bool is_custom = accuracy == xfloat_accuracy::custom;
+		xfloat_mode mode = xfloat_mode::approximate;
+
+		switch (accuracy)
+		{
+		case xfloat_accuracy::accurate:
+			mode = xfloat_mode::accurate;
+			break;
+		case xfloat_accuracy::approximate:
+			mode = xfloat_mode::approximate;
+			break;
+		case xfloat_accuracy::relaxed:
+			mode = xfloat_mode::relaxed;
+			break;
+		case xfloat_accuracy::inaccurate:
+			mode = xfloat_mode::inaccurate;
+			break;
+		case xfloat_accuracy::custom:
+			break;
+		}
+
+		for (const auto& [box, type] : xfloat_modes)
+		{
+			const QSignalBlocker blocker(box);
+			const int index = is_custom
+				? find_item(box, QString::fromStdString(m_emu_settings->GetSetting(type)))
+				: find_item(box, static_cast<int>(mode));
+
+			ensure(index >= 0);
+			box->setCurrentIndex(index);
+			box->setEnabled(is_custom);
+		}
+
+		ui->gb_custom_xfloat->setTitle(is_custom ? tr("Custom XFloat") : tr("XFloat Preset"));
+	};
+
+	connect(ui->xfloatAccuracy, &QComboBox::currentIndexChanged, this, update_xfloat_modes);
+	update_xfloat_modes(ui->xfloatAccuracy->currentIndex());
+
 	m_emu_settings->EnhanceComboBox(ui->spuBlockSize, emu_settings_type::SPUBlockSize);
 	SubscribeTooltip(ui->gb_spuBlockSize, tooltips.settings.spu_block_size);
 
@@ -349,9 +433,11 @@ settings_dialog::settings_dialog(std::shared_ptr<gui_settings> gui_settings, std
 		case static_cast<int>(spu_decoder_type::dynamic):
 		case static_cast<int>(spu_decoder_type::llvm):
 			ui->xfloatAccuracy->setEnabled(true);
+			ui->gb_custom_xfloat->setEnabled(true);
 			break;
 		case static_cast<int>(spu_decoder_type::asmjit):
 			ui->xfloatAccuracy->setEnabled(false);
+			ui->gb_custom_xfloat->setEnabled(false);
 			break;
 		default:
 			break;
