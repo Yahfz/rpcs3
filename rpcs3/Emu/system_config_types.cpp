@@ -714,7 +714,25 @@ void fmt_class_string<xfloat_accuracy>::format(std::string& out, u64 arg)
 		case xfloat_accuracy::accurate: return "Accurate";
 		case xfloat_accuracy::approximate: return "Approximate";
 		case xfloat_accuracy::relaxed: return "Relaxed";
+		case xfloat_accuracy::custom: return "Custom";
 		case xfloat_accuracy::inaccurate: return "Inaccurate";
+		}
+
+		return unknown;
+	});
+}
+
+template <>
+void fmt_class_string<xfloat_mode>::format(std::string& out, u64 arg)
+{
+	format_enum(out, arg, [](xfloat_mode value)
+	{
+		switch (value)
+		{
+		case xfloat_mode::accurate: return "Accurate";
+		case xfloat_mode::approximate: return "Approximate";
+		case xfloat_mode::relaxed: return "Relaxed";
+		case xfloat_mode::inaccurate: return "Inaccurate";
 		}
 
 		return unknown;
