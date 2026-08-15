@@ -352,6 +352,51 @@
                 </property>
                </spacer>
               </item>
+              <item row="9" column="0" colspan="4">
+               <layout class="QHBoxLayout" name="custom_xfloat_presets_layout">
+                <item>
+                 <widget class="QLabel" name="label_custom_xfloat_presets">
+                  <property name="text">
+                   <string>Start from:</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QPushButton" name="customXFloatAccurate">
+                  <property name="text">
+                   <string>Accurate</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QPushButton" name="customXFloatApproximate">
+                  <property name="text">
+                   <string>Approximate</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QPushButton" name="customXFloatRelaxed">
+                  <property name="text">
+                   <string>Relaxed</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <spacer name="horizontalSpacerCustomXFloatPresets">
+                  <property name="orientation">
+                   <enum>Qt::Orientation::Horizontal</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>40</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+               </layout>
+              </item>
              </layout>
             </widget>
            </item>
