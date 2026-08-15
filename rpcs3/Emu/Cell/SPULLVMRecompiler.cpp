@@ -284,6 +284,31 @@ class spu_llvm_recompiler : public spu_recompiler_base, public cpu_translator
 		return get_xfloat_mode(type) == xfloat_mode::relaxed;
 	}
 
+	bool uses_accurate_xfloat() const
+	{
+		if (g_cfg.core.spu_xfloat_accuracy != xfloat_accuracy::custom)
+		{
+			return g_cfg.core.spu_xfloat_accuracy == xfloat_accuracy::accurate;
+		}
+
+		return g_cfg.core.spu_xfloat_mode_fcgt == xfloat_mode::accurate ||
+			g_cfg.core.spu_xfloat_mode_fcmgt == xfloat_mode::accurate ||
+			g_cfg.core.spu_xfloat_mode_fceq == xfloat_mode::accurate ||
+			g_cfg.core.spu_xfloat_mode_fcmeq == xfloat_mode::accurate ||
+			g_cfg.core.spu_xfloat_mode_fa == xfloat_mode::accurate ||
+			g_cfg.core.spu_xfloat_mode_fs == xfloat_mode::accurate ||
+			g_cfg.core.spu_xfloat_mode_fm == xfloat_mode::accurate ||
+			g_cfg.core.spu_xfloat_mode_fnms == xfloat_mode::accurate ||
+			g_cfg.core.spu_xfloat_mode_fma == xfloat_mode::accurate ||
+			g_cfg.core.spu_xfloat_mode_fms == xfloat_mode::accurate ||
+			g_cfg.core.spu_xfloat_mode_fesd == xfloat_mode::accurate ||
+			g_cfg.core.spu_xfloat_mode_frds == xfloat_mode::accurate ||
+			g_cfg.core.spu_xfloat_mode_cflts == xfloat_mode::accurate ||
+			g_cfg.core.spu_xfloat_mode_cfltu == xfloat_mode::accurate ||
+			g_cfg.core.spu_xfloat_mode_csflt == xfloat_mode::accurate ||
+			g_cfg.core.spu_xfloat_mode_cuflt == xfloat_mode::accurate;
+	}
+
 	// All blocks in the current function chunk
 	std::unordered_map<u32, block_info, value_hash<u32, 2>> m_blocks;
 
@@ -2658,7 +2683,7 @@ public:
 						if (src > 0x40000)
 						{
 							// Use the xfloat hint to create 256-bit (4x double) PHI
-							llvm::Type* type = g_cfg.core.spu_xfloat_accuracy == xfloat_accuracy::accurate && bb.reg_maybe_xf.test_unsafe(i) ? get_type<f64[4]>() : get_reg_type(i);
+							llvm::Type* type = uses_accurate_xfloat() && bb.reg_maybe_xf.test_unsafe(i) ? get_type<f64[4]>() : get_reg_type(i);
 
 							const auto _phi = m_ir->CreatePHI(type, ::size32(bb.preds), fmt::format("phi0x%05x_r%u", baddr, i));
 							m_block->phi[i] = _phi;
@@ -3069,7 +3094,7 @@ public:
 				{
 					for (u32 i = 0; i < s_reg_max; i++)
 					{
-						llvm::Type* type = g_cfg.core.spu_xfloat_accuracy == xfloat_accuracy::accurate && bb.reg_maybe_xf.test_unsafe(i) ? get_type<f64[4]>() : get_reg_type(i);
+						llvm::Type* type = uses_accurate_xfloat() && bb.reg_maybe_xf.test_unsafe(i) ? get_type<f64[4]>() : get_reg_type(i);
 
 						if (i < m_reduced_loop_info->loop_dicts.size() && (m_reduced_loop_info->loop_dicts.test(i) || m_reduced_loop_info->loop_writes.test(i)))
 						{
@@ -9042,7 +9067,7 @@ public:
 		}
 
 		const auto r = eval(fi(a, b));
-		if (!m_interp_magn && g_cfg.core.spu_xfloat_accuracy != xfloat_accuracy::accurate)
+		if (!m_interp_magn && !is_xfloat_accurate(spu_itype::FI))
 			spu_log.todo("[%s:0x%05x] Unmatched spu_fi found", m_hash, m_pos);
 
 		set_vr(op.rt, r);
