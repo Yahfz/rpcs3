@@ -844,7 +844,7 @@ class spu_llvm_recompiler : public spu_recompiler_base, public cpu_translator
 			const auto a = m_ir->CreateAnd(d, 0x7fffffffe0000000);
 			const auto n = m_ir->CreateICmpUGE(a, smin);
 			const auto c = m_ir->CreateSelect(m_ir->CreateICmpULT(a, smax), a, smax);
-			const auto r = m_ir->CreateCall(get_intrinsic(llvm::Intrinsic::x86_avx512_pternlog_q_256), {c, d, splat<u64[4]>(0x8000000000000000).eval(m_ir), m_ir->getInt32(0xf8)});
+			const auto r = m_ir->CreateOr(c, m_ir->CreateAnd(d, 0x8000000000000000));
 			return uint64_as_double(m_ir->CreateSelect(n, r, splat<u64[4]>(0).eval(m_ir)));
 		}
 
