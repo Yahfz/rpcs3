@@ -8588,7 +8588,7 @@ spu_program spu_recompiler_base::analyse(const be_t<u32>* ls, u32 entry_point, s
 					{
 						if (reg_pos == SPU_LS_SIZE)
 						{
-							reg = vregs[reg].origin;
+							reg_pos = vregs[reg].origin;
 						}
 						else if (reg_pos != vregs[reg].origin)
 						{
