@@ -2,6 +2,7 @@
 #include "Core/RSXEngLock.hpp"
 #include "Core/RSXReservationLock.hpp"
 #include "RSXThread.h"
+#include "Emu/Memory/vm_reservation.h"
 
 namespace rsx
 {
@@ -133,6 +134,8 @@ namespace rsx
 
 		void ZCULL_control::read_report(::rsx::thread* ptimer, vm::addr_t sink, u32 type)
 		{
+			bool defer_write = false;
+
 			if (m_current_task && type == CELL_GCM_ZPASS_PIXEL_CNT)
 			{
 				m_current_task->owned = true;
@@ -152,14 +155,7 @@ namespace rsx
 			{
 				// Spam; send null query down the pipeline to copy the last result
 				// Might be used to capture a timestamp (verify)
-
-				if (m_pending_writes.empty())
-				{
-					// No need to queue this if there is no pending request in the pipeline anyway
-					write(sink, ptimer->timestamp(), type, m_statistics_map[m_statistics_tag_id].result);
-					return;
-				}
-
+				defer_write = m_pending_writes.empty();
 				m_pending_writes.push_back({});
 			}
 
@@ -191,6 +187,11 @@ namespace rsx
 			}
 
 			on_report_enqueued(sink);
+
+			if (defer_write)
+			{
+				m_next_tsc = get_system_time() + min_zcull_tick_us;
+			}
 
 			ptimer->async_tasks_pending++;
 
@@ -362,9 +363,15 @@ namespace rsx
 				break;
 			}
 
-			rsx::reservation_lock<true> lock(sink, 16);
+			const bool is_main_memory = sink < rsx::constants::local_mem_base;
+			rsx::reservation_lock<true> lock(sink, 16, is_main_memory);
 			auto report = vm::get_super_ptr<atomic_t<CellGcmReportData>>(sink);
 			report->store({timestamp, value, 0});
+
+			if (is_main_memory)
+			{
+				vm::reservation_update(sink);
+			}
 		}
 
 		void ZCULL_control::write(queued_report_write* writer, u64 timestamp, u32 value)

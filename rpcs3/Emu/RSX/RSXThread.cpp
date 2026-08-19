@@ -17,6 +17,7 @@
 #include "Emu/System.h"
 #include "Emu/Cell/PPUThread.h"
 #include "Emu/Cell/timers.hpp"
+#include "Emu/Memory/vm_reservation.h"
 #include "Emu/Cell/lv2/sys_event.h"
 #include "Emu/Cell/lv2/sys_time.h"
 #include "Emu/Cell/Modules/cellGcmSys.h"
@@ -2618,8 +2619,14 @@ namespace rsx
 			}
 		}
 
-		rsx::reservation_lock<true> lock(sink, 16);
+		const bool is_main_memory = sink < rsx::constants::local_mem_base;
+		rsx::reservation_lock<true> lock(sink, 16, is_main_memory);
 		vm::_ptr<atomic_t<CellGcmReportData>>(sink)->store({timestamp(), value, 0});
+
+		if (is_main_memory)
+		{
+			vm::reservation_update(sink);
+		}
 	}
 
 	u32 thread::copy_zcull_stats(u32 memory_range_start, u32 memory_range, u32 destination)
