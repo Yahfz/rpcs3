@@ -2049,6 +2049,7 @@ void spu_thread::do_dma_transfer(spu_thread* _this, const spu_mfc_cmd& args, u8*
 	// Keep src point to const
 	u8* dst = nullptr;
 	const u8* src = nullptr;
+	bool is_spu_ls_access = false;
 
 	std::tie(dst, src) = [&]() -> std::pair<u8*, const u8*>
 	{
@@ -2111,6 +2112,8 @@ void spu_thread::do_dma_transfer(spu_thread* _this, const spu_mfc_cmd& args, u8*
 			if (offset + args.size <= SPU_LS_SIZE) // LS access
 			{
 				// redirect access
+				is_spu_ls_access = true;
+
 				if (auto ptr = spu.ls + offset; is_get)
 					src = ptr;
 				else
@@ -2146,9 +2149,9 @@ void spu_thread::do_dma_transfer(spu_thread* _this, const spu_mfc_cmd& args, u8*
 		src = zero_buf;
 	}
 
-	rsx::reservation_lock<false, 1> rsx_lock(eal, args.size, !is_get && (g_cfg.video.strict_rendering_mode || (g_cfg.core.rsx_fifo_accuracy && !g_cfg.core.spu_accurate_dma && eal < rsx::constants::local_mem_base)));
+	rsx::reservation_lock<false, 1> rsx_lock(eal, args.size, !is_spu_ls_access && !is_get && (g_cfg.video.strict_rendering_mode || (g_cfg.core.rsx_fifo_accuracy && !g_cfg.core.spu_accurate_dma && eal < rsx::constants::local_mem_base)));
 
-	if (!is_get || g_cfg.core.spu_accurate_dma)  [[unlikely]]
+	if (!is_spu_ls_access && (!is_get || g_cfg.core.spu_accurate_dma)) [[unlikely]]
 	{
 		perf_meter<"ADMA_GET"_u64> perf_get = perf_;
 		perf_meter<"ADMA_PUT"_u64> perf_put = perf_;
