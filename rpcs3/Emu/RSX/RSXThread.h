@@ -245,6 +245,7 @@ namespace rsx
 
 		rsx::atomic_bitmask_t<rsx::eng_interrupt_reason> m_eng_interrupt_mask;
 		rsx::bitmask_t<rsx::pipeline_state> m_graphics_state;
+		bool m_local_task_pending = false; // Set and consumed on the RSX thread.
 
 		u64 ROP_sync_timestamp = 0;
 

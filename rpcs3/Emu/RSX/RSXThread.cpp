@@ -835,8 +835,10 @@ namespace rsx
 		method_registers.current_draw_clause.post_execute_cleanup(m_ctx);
 
 		m_graphics_state |= rsx::pipeline_state::framebuffer_reads_dirty;
-		m_eng_interrupt_mask |= rsx::backend_interrupt;
-		ROP_sync_timestamp = rsx::get_shared_tag();
+		m_local_task_pending = true;
+
+		// Only need to know whether a readback predates the last draw.
+		ROP_sync_timestamp = rsx::peek_shared_tag();
 
 		m_draw_processor.clear_push_buffers();
 
@@ -1145,7 +1147,7 @@ namespace rsx
 			// Update sub-units every 64 cycles. The local handler is invoked for other functions externally on-demand anyway.
 			// This avoids expensive calls to check timestamps which involves reading some values from TLS storage on windows.
 			// If something is going on in the backend that requires an update, set the interrupt bit explicitly.
-			if ((m_cycles_counter++ & 63) == 0 || m_eng_interrupt_mask)
+			if ((m_cycles_counter++ & 63) == 0 || m_local_task_pending || m_eng_interrupt_mask)
 			{
 				// Execute backend-local tasks first
 				do_local_task(performance_counters.state);
@@ -1223,7 +1225,11 @@ namespace rsx
 
 	void thread::do_local_task(FIFO::state state)
 	{
-		m_eng_interrupt_mask.clear(rsx::backend_interrupt);
+		m_local_task_pending = false;
+		if (m_eng_interrupt_mask & rsx::backend_interrupt)
+		{
+			m_eng_interrupt_mask.clear(rsx::backend_interrupt);
+		}
 
 		if (async_flip_requested & flip_request::emu_requested)
 		{

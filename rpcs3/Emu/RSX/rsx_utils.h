@@ -273,6 +273,11 @@ namespace rsx
 		return g_rsx_shared_tag++;
 	}
 
+	static inline u64 peek_shared_tag()
+	{
+		return g_rsx_shared_tag.load();
+	}
+
 	static inline u32 get_location(u32 addr)
 	{
 		// We don't really care about the actual memory map, it shouldn't be possible to use the mmio bar region anyway
