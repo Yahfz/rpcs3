@@ -386,6 +386,7 @@ void VKFragmentDecompilerThread::insertGlobalFunctions(std::stringstream &OS)
 {
 	m_shader_props.domain = glsl::glsl_fragment_program;
 	m_shader_props.require_lit_emulation = properties.has_lit_op;
+	m_shader_props.require_precise_dpx = properties.has_dpx && device_props.emulate_dpx;
 	m_shader_props.fp32_outputs = !!(m_prog.ctrl & CELL_GCM_SHADER_CONTROL_32_BITS_EXPORTS);
 	m_shader_props.require_depth_conversion = properties.redirected_sampler_mask != 0;
 	m_shader_props.require_wpos = !!(properties.in_register_mask & in_wpos);
@@ -617,6 +618,8 @@ void VKFragmentProgram::Decompile(const RSXFragmentProgram& prog)
 	VKFragmentDecompilerThread decompiler(source, parr, prog, size, *this);
 
 	const auto pdev = vk::get_current_renderer();
+	decompiler.device_props.emulate_dpx = g_cfg.video.shader_precision == gpu_preset_level::hardware_accurate;
+
 	if (g_cfg.video.shader_precision == gpu_preset_level::low)
 	{
 		decompiler.device_props.has_native_half_support = pdev->get_shader_types_support().allow_float16;

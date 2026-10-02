@@ -28,8 +28,10 @@ class FragmentProgramDecompiler
 		src_cast_f32 = 2,
 		skip_type_cast = 4,
 		texture_ref = 8,
+		precise_dpx = 16,
 
 		op_extern = src_cast_f32 | skip_type_cast,
+		op_dpx = op_extern | precise_dpx,
 	};
 
 	OPDEST dst;
@@ -45,6 +47,8 @@ class FragmentProgramDecompiler
 	u32 m_const_index = 0;
 	u32 m_location = 0;
 	bool m_is_valid_ucode = true;
+	bool m_has_fp16_clamp = false;
+	bool m_has_fp16_truncate = false;
 
 	u32 m_loop_count;
 	int m_code_level;
@@ -66,7 +70,7 @@ class FragmentProgramDecompiler
 	std::string AddX2d();
 
 	// Prevents operations from overflowing the desired range (tested with fp_dynamic3 autotest sample, DS2 for src1.input_prec_mod)
-	std::string ClampValue(const std::string& code, u32 precision);
+	std::string ClampValue(const std::string& code, u32 precision, u32 flags = 0);
 
 	/**
 	* Returns true if the dst set is not a vector (i.e only a single component)
@@ -179,6 +183,7 @@ public:
 		bool has_pkg = false;
 		bool has_upg = false;
 		bool has_dynamic_register_load = false;
+		bool has_dpx = false;
 
 		bool has_tex1D = false;
 		bool has_tex2D = false;
@@ -193,6 +198,7 @@ public:
 	struct
 	{
 		bool has_native_half_support = false;
+		bool emulate_dpx = false;
 		bool emulate_depth_compare = false;
 		bool has_low_precision_rounding = false;
 	}

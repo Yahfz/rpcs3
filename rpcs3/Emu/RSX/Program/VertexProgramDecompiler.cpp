@@ -601,9 +601,18 @@ std::string VertexProgramDecompiler::Decompile()
 		case RSX_VEC_OPCODE_MUL: SetDSTVec("($0 * $1)"); break;
 		case RSX_VEC_OPCODE_ADD: SetDSTVec("($0 + $2)"); break;
 		case RSX_VEC_OPCODE_MAD: SetDSTVec("fma($0, $1, $2)"); break;
-		case RSX_VEC_OPCODE_DP3: SetDSTVec(getFunction(FUNCTION::DP3)); break;
-		case RSX_VEC_OPCODE_DPH: SetDSTVec(getFunction(FUNCTION::DPH)); break;
-		case RSX_VEC_OPCODE_DP4: SetDSTVec(getFunction(FUNCTION::DP4)); break;
+		case RSX_VEC_OPCODE_DP3:
+			SetDSTVec(getFunction(device_props.emulate_dpx ? FUNCTION::VP_DP3_PRECISE : FUNCTION::DP3));
+			properties.has_dpx = true;
+			break;
+		case RSX_VEC_OPCODE_DPH:
+			SetDSTVec(getFunction(device_props.emulate_dpx ? FUNCTION::VP_DPH_PRECISE : FUNCTION::DPH));
+			properties.has_dpx = true;
+			break;
+		case RSX_VEC_OPCODE_DP4:
+			SetDSTVec(getFunction(device_props.emulate_dpx ? FUNCTION::VP_DP4_PRECISE : FUNCTION::DP4));
+			properties.has_dpx = true;
+			break;
 		case RSX_VEC_OPCODE_DST: SetDSTVec("vec4(1.0, $0.y * $1.y, $0.z, $1.w)"); break;
 		case RSX_VEC_OPCODE_MIN: SetDSTVec("min($0, $1)"); break;
 		case RSX_VEC_OPCODE_MAX: SetDSTVec("max($0, $1)"); break;

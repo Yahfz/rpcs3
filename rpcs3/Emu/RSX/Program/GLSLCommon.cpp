@@ -284,6 +284,13 @@ namespace glsl
 			#include "GLSLSnippets/RSXProg/RSXProgramCommon.glsl"
 		;
 
+		if (props.require_precise_dpx)
+		{
+			OS <<
+				#include "GLSLSnippets/RSXProg/RSXDPX.glsl"
+			;
+		}
+
 		if (props.domain == glsl::program_domain::glsl_vertex_program)
 		{
 			if (props.require_explicit_invariance)
@@ -528,6 +535,20 @@ namespace glsl
 			return "$Ty(dot($0, $1))";
 		case FUNCTION::DPH:
 			return "$Ty(dot(vec4($0.xyz, 1.0), $1))";
+		case FUNCTION::FP_DP2_PRECISE:
+			return "$Ty(_fp_dp2($0, $1))";
+		case FUNCTION::FP_DP2A_PRECISE:
+			return "$Ty(_fp_dp2a($0, $1, $2.x))";
+		case FUNCTION::FP_DP3_PRECISE:
+			return "$Ty(_fp_dp3($0, $1))";
+		case FUNCTION::FP_DP4_PRECISE:
+			return "$Ty(_fp_dp4($0, $1))";
+		case FUNCTION::VP_DP3_PRECISE:
+			return "$Ty(_vp_dp3($0, $1))";
+		case FUNCTION::VP_DPH_PRECISE:
+			return "$Ty(_vp_dph($0, $1))";
+		case FUNCTION::VP_DP4_PRECISE:
+			return "$Ty(_vp_dp4($0, $1))";
 		case FUNCTION::SFL:
 			return "$Ty(0.)";
 		case FUNCTION::STR:

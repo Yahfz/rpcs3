@@ -173,9 +173,10 @@ void GLVertexDecompilerThread::insertMainStart(std::stringstream& OS)
 	glsl::shader_properties properties2{};
 	properties2.domain = glsl::glsl_vertex_program;
 	properties2.require_lit_emulation = properties.has_lit_op;
+	properties2.require_precise_dpx = properties.has_dpx && device_props.emulate_dpx;
 	properties2.emulate_zclip_transform = true;
 	properties2.emulate_depth_clip_only = dev_caps.NV_depth_buffer_float_supported;
-	properties2.low_precision_tests = dev_caps.vendor_NVIDIA;
+	properties2.low_precision_tests = dev_caps.vendor_NVIDIA && !properties2.require_precise_dpx;
 	properties2.require_explicit_invariance = dev_caps.vendor_MESA || (dev_caps.vendor_NVIDIA && g_cfg.video.shader_precision != gpu_preset_level::low);
 	properties2.require_instanced_render = !!(m_prog.ctrl & RSX_SHADER_CONTROL_INSTANCED_CONSTANTS);
 	properties2.require_clip_plane_functions = true;
@@ -323,6 +324,7 @@ void GLVertexProgram::Decompile(const RSXVertexProgram& prog)
 {
 	std::string source;
 	GLVertexDecompilerThread decompiler(prog, source, parr);
+	decompiler.device_props.emulate_dpx = g_cfg.video.shader_precision == gpu_preset_level::hardware_accurate;
 	decompiler.Task();
 
 	has_indexed_constants = decompiler.properties.has_indexed_constants;

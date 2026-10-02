@@ -217,6 +217,7 @@ void GLFragmentDecompilerThread::insertGlobalFunctions(std::stringstream &OS)
 {
 	m_shader_props.domain = glsl::glsl_fragment_program;
 	m_shader_props.require_lit_emulation = properties.has_lit_op;
+	m_shader_props.require_precise_dpx = properties.has_dpx && device_props.emulate_dpx;
 	m_shader_props.fp32_outputs = !!(m_prog.ctrl & CELL_GCM_SHADER_CONTROL_32_BITS_EXPORTS);
 	m_shader_props.require_depth_conversion = properties.redirected_sampler_mask != 0;
 	m_shader_props.require_wpos = !!(properties.in_register_mask & in_wpos);
@@ -392,6 +393,8 @@ void GLFragmentProgram::Decompile(const RSXFragmentProgram& prog)
 	u32 size;
 	std::string source;
 	GLFragmentDecompilerThread decompiler(source, parr, prog, size);
+
+	decompiler.device_props.emulate_dpx = g_cfg.video.shader_precision == gpu_preset_level::hardware_accurate;
 
 	if (g_cfg.video.shader_precision == gpu_preset_level::low)
 	{

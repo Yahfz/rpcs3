@@ -120,7 +120,19 @@ void FragmentProgramDecompiler::SetDst(std::string code, u32 flags)
 		}
 	}
 
-	if (!dst.no_dest)
+	if (flags & OPFLAGS::precise_dpx)
+	{
+		// CC gets the clamped result even when theres no destination register
+		code = ClampValue(code, dst.saturate ? RSX_FP_PRECISION_SATURATE : dst.prec, flags);
+
+		// round to fp16 before updating CC
+		if (dst.fp16)
+		{
+			m_has_fp16_truncate = true;
+			code = "_fp16_truncate(" + code + ")";
+		}
+	}
+	else if (!dst.no_dest)
 	{
 		if (dst.fp16 && device_props.has_native_half_support && !(flags & OPFLAGS::skip_type_cast))
 		{
@@ -332,7 +344,7 @@ std::string FragmentProgramDecompiler::AddX2d()
 	return m_parr.AddParam(PF_PARAM_NONE, getFloatTypeName(4), "x2d", getFloatTypeName(4) + "(0.)");
 }
 
-std::string FragmentProgramDecompiler::ClampValue(const std::string& code, u32 precision)
+std::string FragmentProgramDecompiler::ClampValue(const std::string& code, u32 precision, u32 flags)
 {
 	// FP16 is expected to overflow a lot easier at 0+-65504
 	// FP32 can still work up to 0+-3.4E38
@@ -350,6 +362,11 @@ std::string FragmentProgramDecompiler::ClampValue(const std::string& code, u32 p
 		// Full 32-bit precision
 		break;
 	case RSX_FP_PRECISION_HALF:
+		if (flags & OPFLAGS::precise_dpx)
+		{
+			m_has_fp16_clamp = true;
+			return "_fp16_clamp(" + code + ")";
+		}
 		return "clamp16(" + code + ")";
 	case RSX_FP_PRECISION_FIXED12:
 		return "precision_clamp(" + code + ", -2., 2.)";
@@ -361,7 +378,11 @@ std::string FragmentProgramDecompiler::ClampValue(const std::string& code, u32 p
 		// Doesn't seem to do anything to the input from hw tests, same as 0
 		break;
 	default:
-		rsx_log.error("Unexpected precision modifier (%d)\n", precision);
+		// source precision modifiers 6 and 7 leave DPX inputs unchanged on hw
+		if (!(flags & OPFLAGS::precise_dpx))
+		{
+			rsx_log.error("Unexpected precision modifier (%d)\n", precision);
+		}
 		break;
 	}
 
@@ -790,12 +811,18 @@ template<typename T> std::string FragmentProgramDecompiler::GetSRC(T src)
 		ret += swizzle;
 	}
 
-	// Warning: Modifier order matters. e.g neg should be applied after precision clamping (tested with Naruto UNS)
+	// apply source SAT before abs, and negate after source clamping
 	const bool precision_before_abs = precision_modifier == RSX_FP_PRECISION_SATURATE;
-	if (precision_before_abs) ret = ClampValue(ret, precision_modifier);
+	if (precision_before_abs) ret = ClampValue(ret, precision_modifier, opflags);
 	if (src.abs) ret = "abs(" + ret + ")";
-	if (precision_modifier && !precision_before_abs) ret = ClampValue(ret, precision_modifier);
+	if (precision_modifier && !precision_before_abs) ret = ClampValue(ret, precision_modifier, opflags);
 	if (src.neg) ret = "-" + ret;
+
+	// DPX also applies the instruction precision to its operands
+	if (opflags & OPFLAGS::precise_dpx)
+	{
+		ret = ClampValue(ret, dst.prec, opflags);
+	}
 
 	return ret;
 }
@@ -960,6 +987,40 @@ std::string FragmentProgramDecompiler::BuildCode()
 		"#define clamp16(x) " << getHalfTypeName(4) << "(x)\n";
 	}
 
+	if (m_has_fp16_clamp)
+	{
+		OS <<
+		"vec4 _fp16_clamp(vec4 value)\n"
+		"{\n"
+		"	// HALF modifiers limit the range without rounding the mantissa\n"
+		"	uvec4 bits = floatBitsToUint(value);\n"
+		"	uvec4 magnitude = bits & 0x7fffffffu;\n"
+		"	vec4 infinity = uintBitsToFloat((bits & 0x80000000u) | 0x7f800000u);\n"
+		"	bvec4 overflow = bvec4(uvec4(greaterThanEqual(magnitude, uvec4(0x47800000u))) & uvec4(lessThanEqual(magnitude, uvec4(0x7f800000u))));\n"
+		"	return _select(value, infinity, overflow);\n"
+		"}\n"
+		"\n";
+	}
+
+	if (m_has_fp16_truncate)
+	{
+		OS <<
+		"vec4 _fp16_truncate(vec4 value)\n"
+		"{\n"
+		"	uvec4 bits = floatBitsToUint(value);\n"
+		"	uvec4 exponent = (bits >> 23) & 0xffu;\n"
+		"	uvec4 discarded = uvec4(clamp(ivec4(126) - ivec4(exponent), 13, 23));\n"
+		"	// truncate first so the half conversion cannot round up\n"
+		"	vec4 result = clamp16(uintBitsToFloat(bits & (uvec4(0xffffffffu) << discarded)));\n"
+		"	// H registers flush values below the half subnormal range to +0\n"
+		"	result = _select(result, vec4(0.), lessThan(exponent, uvec4(103u)));\n"
+		"	vec4 infinity = uintBitsToFloat((bits & 0x80000000u) | 0x7f800000u);\n"
+		"	result = _select(result, infinity, greaterThan(exponent, uvec4(142u)));\n"
+		"	return _select(result, value, isnan(value));\n"
+		"}\n"
+		"\n";
+	}
+
 	OS <<
 	"#define _builtin_log2 log2\n"
 	"#define _builtin_normalize(x) (length(x) > 0? normalize(x) : x)\n" // HACK!! Workaround for some games that generate NaNs unless texture filtering exactly matches PS3 (BFBC)
@@ -1088,12 +1149,29 @@ bool FragmentProgramDecompiler::handle_sct_scb(u32 opcode)
 		SetDst("_builtin_divsq($0, $1.x)");
 		properties.has_divsq = true;
 		return true;
-	case RSX_FP_OPCODE_DP2: SetDst(getFunction(FUNCTION::DP2), OPFLAGS::op_extern); return true;
-	case RSX_FP_OPCODE_DP3:
-		SetDst(getFunction(dst.prec == RSX_FP_PRECISION_REAL && g_cfg.video.shader_precision == gpu_preset_level::ultra ? FUNCTION::DP3_PRECISE : FUNCTION::DP3), OPFLAGS::op_extern);
+	case RSX_FP_OPCODE_DP2:
+		properties.has_dpx = true;
+		SetDst(getFunction(device_props.emulate_dpx ? FUNCTION::FP_DP2_PRECISE : FUNCTION::DP2),
+			device_props.emulate_dpx ? OPFLAGS::op_dpx : OPFLAGS::op_extern);
 		return true;
-	case RSX_FP_OPCODE_DP4: SetDst(getFunction(FUNCTION::DP4), OPFLAGS::op_extern); return true;
-	case RSX_FP_OPCODE_DP2A: SetDst(getFunction(FUNCTION::DP2A), OPFLAGS::op_extern); return true;
+	case RSX_FP_OPCODE_DP3:
+	{
+		properties.has_dpx = true;
+		const auto func = device_props.emulate_dpx ? FUNCTION::FP_DP3_PRECISE :
+			(dst.prec == RSX_FP_PRECISION_REAL && g_cfg.video.shader_precision == gpu_preset_level::ultra ? FUNCTION::DP3_PRECISE : FUNCTION::DP3);
+		SetDst(getFunction(func), device_props.emulate_dpx ? OPFLAGS::op_dpx : OPFLAGS::op_extern);
+		return true;
+	}
+	case RSX_FP_OPCODE_DP4:
+		properties.has_dpx = true;
+		SetDst(getFunction(device_props.emulate_dpx ? FUNCTION::FP_DP4_PRECISE : FUNCTION::DP4),
+			device_props.emulate_dpx ? OPFLAGS::op_dpx : OPFLAGS::op_extern);
+		return true;
+	case RSX_FP_OPCODE_DP2A:
+		properties.has_dpx = true;
+		SetDst(getFunction(device_props.emulate_dpx ? FUNCTION::FP_DP2A_PRECISE : FUNCTION::DP2A),
+			device_props.emulate_dpx ? OPFLAGS::op_dpx : OPFLAGS::op_extern);
+		return true;
 	case RSX_FP_OPCODE_MAD: SetDst("fma($0, $1, $2)", OPFLAGS::src_cast_f32); return true;
 	case RSX_FP_OPCODE_MAX: SetDst("max($0, $1)", OPFLAGS::src_cast_f32); return true;
 	case RSX_FP_OPCODE_MIN: SetDst("min($0, $1)", OPFLAGS::src_cast_f32); return true;

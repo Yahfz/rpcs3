@@ -138,8 +138,15 @@ public:
 		// Decoded properties (out)
 		bool has_lit_op = false;
 		bool has_indexed_constants = false;
+		bool has_dpx = false;
 	}
 	properties;
+
+	struct
+	{
+		bool emulate_dpx = false;
+	}
+	device_props;
 
 	VertexProgramDecompiler(const RSXVertexProgram& prog);
 	std::string Decompile();

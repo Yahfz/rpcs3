@@ -338,6 +338,7 @@ enum class zcull_precision_level
 
 enum class gpu_preset_level
 {
+	hardware_accurate,
 	ultra,
 	high,
 	low,
